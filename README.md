@@ -59,8 +59,12 @@ This configuration does not create MQTT sensors; those must already exist.
 All fields in the supplied `/api/status` sample are represented, including probe
 and passive-capture diagnostics. Charger codes are displayed without guessing
 their meanings. Controls require confirmed Home Assistant actions or MQTT command
-topics and payloads and are not implemented yet. The original webpage has not
-been inspected, so matching its layout and additional features remains pending.
+topics and payloads and are not implemented yet. The General tab follows the supplied Battery Reader screenshots, with a blue
+identity header, present-charge bar, capacities, dates, cycle counts, and
+recommendations. Advanced groups diagnostics; Settings currently displays
+connection and notification status only. Other webpage views and controls still
+need reference screenshots and command details. No battery image or vendor logo
+is bundled, and an end-of-life classification is not inferred from health alone.
 
 The protocol research and passive capture firmware live in
 [OpenIMPRES](https://github.com/rodgrech/OpenIMPRES).

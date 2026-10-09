@@ -69,40 +69,90 @@ class OpenIMPRESCard extends HTMLElement {
 
   render() {
     if (!this.config || !this._hass) return;
+    const show = field => this.escape(this.format(field, this.value(field)));
+    const row = (field, label = this.label(field)) => `<div class="row"><dt>${this.escape(label)}</dt><dd>${show(field)}</dd></div>`;
     const charge = this.value('battery.charge_percent');
-    const health = this.value('battery.health_percent');
-    const meter = (title, value) => {
-      const valid = value !== undefined && value !== null && value !== '' && Number.isFinite(Number(value));
-      return `<div class="meter"><span>${title}</span><strong>${valid ? this.escape(value) + '%' : 'Not available'}</strong>${valid ? `<progress aria-label="${title}" max="100" value="${Math.max(0, Math.min(100, Number(value)))}"></progress>` : ''}</div>`;
-    };
+    const validCharge = charge !== undefined && charge !== null && charge !== '' && Number.isFinite(Number(charge));
+    const percent = validCharge ? Math.max(0, Math.min(100, Number(charge))) : 0;
+    const selected = this.selectedTab || 'general';
+    const group = (title, fields) => `<section><h3>${this.escape(title)}</h3><dl>${fields.map(field => row(field)).join('')}</dl></section>`;
     this.shadowRoot.innerHTML = `
       <style>
-        ha-card { padding: 20px; color: var(--primary-text-color); }
-        h2 { margin: 0 0 6px; font-size: 22px; }
-        .status { color: var(--secondary-text-color); margin-bottom: 18px; }
-        .meters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 18px; }
-        .meter { display: flex; flex-direction: column; gap: 6px; }
-        .meter strong { font-size: 24px; }
-        progress { width: 100%; accent-color: var(--primary-color); }
-        details { border-top: 1px solid var(--divider-color); padding: 12px 0; }
-        summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
-        dl { margin: 12px 0 0; }
-        .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; padding: 6px 0; }
+        :host { display: block; }
+        ha-card { overflow: hidden; color: var(--primary-text-color); }
+        .header { background: linear-gradient(110deg, #eaf3f9, #497fa8); color: #081723; padding: 26px 22px; }
+        h2 { margin: 0 0 18px; font-size: 24px; }
+        .identity { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 20px; }
+        .identity .row { align-items: center; }
+        .identity dt { color: #081723; }
+        .identity dd { background: #fff; color: #081723; padding: 6px 8px; border: 1px solid #b5c6d3; }
+        .health { margin-top: 16px; font-weight: 600; text-align: right; }
+        .tabs { display: flex; gap: 4px; padding: 0 16px; background: var(--secondary-background-color); border-bottom: 1px solid var(--divider-color); }
+        .tab { padding: 10px 20px; border: 1px solid var(--divider-color); border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--secondary-background-color); color: var(--primary-text-color); cursor: pointer; font: inherit; }
+        .tab[aria-selected="true"] { background: var(--card-background-color); font-weight: 600; }
+        .panel { padding: 22px; } [hidden] { display: none !important; }
+        .charge-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px; align-items: center; }
+        .charge-label { margin-bottom: 12px; }
+        .charge { position: relative; height: 72px; background: var(--secondary-background-color); border: 1px solid var(--divider-color); display: grid; place-items: center; }
+        .fill { position: absolute; inset: 0 auto 0 0; width: ${percent}%; background: linear-gradient(90deg, #4087b0, #91bbd5); }
+        .charge strong { position: relative; font-size: 26px; }
+        dl { margin: 0; } .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; padding: 5px 0; }
         dt { color: var(--secondary-text-color); } dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
-        .missing { color: var(--secondary-text-color); }
-        .note { font-size: 12px; color: var(--secondary-text-color); }
+        .history { margin-top: 22px; } .history .row { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+        .history dt { grid-column: 2; grid-row: 1; } .history dd { grid-column: 1; grid-row: 1; text-align: left; padding: 6px; border: 1px solid var(--divider-color); }
+        h3 { font-size: 16px; margin: 18px 0 8px; } section:first-child h3 { margin-top: 0; }
+        .recommendations { margin-top: 18px; padding: 12px; background: var(--secondary-background-color); border-left: 3px solid #497fa8; overflow-wrap: anywhere; }
+        .note { font-size: 12px; color: var(--secondary-text-color); margin-top: 14px; }
+        @media (max-width: 550px) { .identity, .charge-grid { grid-template-columns: 1fr; } h2 { font-size: 21px; } .header, .panel { padding: 18px; } .tab { padding: 10px 14px; } }
       </style>
       <ha-card>
-        <h2>${this.escape(this.config.title || 'OpenIMPRES')}</h2>
-        <div class="status">${this.escape(this.format('capture_status', this.value('capture_status')))}</div>
-        <div class="meters">${meter('Charge', charge)}${meter('Health', health)}</div>
-        ${Object.entries(OPENIMPRES_SECTIONS).map(([title, fields], index) => `<details ${index === 0 ? 'open' : ''}><summary>${title}</summary><dl>${fields.map(field => {
-          const value = this.value(field);
-          return `<div class="row"><dt>${this.escape(this.label(field))}</dt><dd class="${value === undefined ? 'missing' : ''}">${this.escape(this.format(field, value))}</dd></div>`;
-        }).join('')}</dl></details>`).join('')}
-        <div class="note">Charger status codes are shown as reported by the device.</div>
+        <header class="header">
+          <h2>${this.escape(this.config.title || 'OpenIMPRES Battery Reader')}</h2>
+          <dl class="identity">${row('battery.serial', 'Serial Number')}${row('battery.chemistry', 'Chemistry')}${row('battery.kit', 'Kit Number')}${row('battery_present', 'Battery Present')}</dl>
+          <div class="health">Health: ${show('battery.health_percent')}</div>
+        </header>
+        <div class="tabs" role="tablist" aria-label="Battery reader views">
+          ${['general', 'advanced', 'settings'].map(tab => `<button class="tab" id="tab-${tab}" role="tab" aria-controls="panel-${tab}" aria-selected="${selected === tab}" tabindex="${selected === tab ? 0 : -1}" data-tab="${tab}">${tab[0].toUpperCase() + tab.slice(1)}</button>`).join('')}
+        </div>
+        <div class="panel" id="panel-general" role="tabpanel" aria-labelledby="tab-general" ${selected !== 'general' ? 'hidden' : ''}>
+          <div class="charge-grid">
+            <div><div class="charge-label">Present Charge</div><div class="charge" ${validCharge ? `role="progressbar" aria-label="Present charge" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"` : ''}><div class="fill"></div><strong>${show('battery.charge_percent')}</strong></div></div>
+            <dl>${row('battery.present_mAh', 'Present Charge')}${row('battery.potential_mAh', 'Potential Capacity')}${row('battery.rated_mAh', 'Rated Capacity')}${row('battery.initial_mAh', 'Initial Capacity')}</dl>
+          </div>
+          <dl class="history">${row('battery.manufacture_date', 'Manufacture Date')}${row('battery.first_use_date', 'Date of First Use')}${row('battery.days_since_calibration', 'Days since Last Reconditioning / Calibration')}${row('battery.days_since_removal', 'Days since Removal from IMPRES Charger')}${row('battery.charge_cycles', 'Total IMPRES Charge Cycles')}${row('battery.non_impres_cycles', 'Total Estimated Non-IMPRES Charge Cycles')}${row('battery.calibration_cycles', 'Total Reconditioning / Calibration Cycles')}${row('battery.days_until_calibration', 'Estimated Days Until Next Reconditioning / Calibration')}</dl>
+          <h3>Recommendations</h3><div class="recommendations">${show('battery.recommendations')}</div>
+        </div>
+        <div class="panel" id="panel-advanced" role="tabpanel" aria-labelledby="tab-advanced" ${selected !== 'advanced' ? 'hidden' : ''}>
+          ${group('Battery diagnostics', ['impres_detected', 'battery.voltage_V', 'battery.temperature_C', 'battery.charge_cycles', 'battery.non_impres_cycles', 'battery.calibration_cycles'])}
+          ${['Charger and capture', 'Header probe', 'Passive capture'].map(title => group(title, OPENIMPRES_SECTIONS[title])).join('')}
+          <div class="note">Charger status codes are shown as reported by the device.</div>
+        </div>
+        <div class="panel" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" ${selected !== 'settings' ? 'hidden' : ''}>
+          ${group('Connection and notification status', OPENIMPRES_SECTIONS['Network and notifications'])}
+          <div class="note">Status only. Device configuration controls require confirmed command topics.</div>
+        </div>
       </ha-card>`;
+    const activate = tab => {
+      this.selectedTab = tab;
+      this.render();
+      this.shadowRoot.querySelector(`[data-tab="${tab}"]`).focus();
+    };
+    this.shadowRoot.querySelectorAll('[data-tab]').forEach(button => {
+      button.addEventListener('click', () => activate(button.dataset.tab));
+      button.addEventListener('keydown', event => {
+        const tabs = ['general', 'advanced', 'settings'];
+        let index = tabs.indexOf(button.dataset.tab);
+        if (event.key === 'ArrowRight') index = (index + 1) % tabs.length;
+        else if (event.key === 'ArrowLeft') index = (index + tabs.length - 1) % tabs.length;
+        else if (event.key === 'Home') index = 0;
+        else if (event.key === 'End') index = tabs.length - 1;
+        else return;
+        event.preventDefault();
+        activate(tabs[index]);
+      });
+    });
   }
+
 }
 
 if (!customElements.get('openimpres-card')) customElements.define('openimpres-card', OpenIMPRESCard);
