@@ -22,6 +22,7 @@ fields display **Not available**; no entity naming scheme is assumed.
 ```yaml
 type: custom:openimpres-card
 title: OpenIMPRES Battery
+reader_name: Motorola SUC
 entities:
   battery_present: binary_sensor.openimpres_battery_present
   impres_detected: binary_sensor.openimpres_impres_detected
@@ -61,7 +62,10 @@ and passive-capture diagnostics. Charger codes are displayed without guessing
 their meanings. Controls require confirmed Home Assistant actions or MQTT command
 topics and payloads and are not implemented yet. The General tab follows the supplied Battery Reader screenshots, with a blue
 identity header, present-charge bar, capacities, dates, cycle counts, and
-recommendations. Advanced groups diagnostics; Settings currently displays
+recommendations. Advanced includes Live monitor (voltage, temperature, estimated
+health), Reader identity, and expandable capture diagnostics. Set `reader_name`
+to label the reader's location or charger; this is a display-only card setting
+and does not change the device's email-alert identity. Settings currently displays
 connection and notification status only. Other webpage views and controls still
 need reference screenshots and command details. No battery image or vendor logo
 is bundled, and an end-of-life classification is not inferred from health alone.

@@ -101,6 +101,12 @@ class OpenIMPRESCard extends HTMLElement {
         .history { margin-top: 22px; } .history .row { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
         .history dt { grid-column: 2; grid-row: 1; } .history dd { grid-column: 1; grid-row: 1; text-align: left; padding: 6px; border: 1px solid var(--divider-color); }
         h3 { font-size: 16px; margin: 18px 0 8px; } section:first-child h3 { margin-top: 0; }
+        .box { background: var(--card-background-color); border: 1px solid var(--divider-color); border-radius: 7px; padding: 16px; margin-bottom: 18px; box-shadow: 0 2px 4px rgb(0 0 0 / 8%); }
+        .box h3 { margin: 0 0 18px; padding-bottom: 10px; border-bottom: 1px solid var(--divider-color); font-size: 18px; }
+        .box .history { margin-top: 0; } .box .history dd { background: var(--secondary-background-color); }
+        .reader { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px; align-items: center; }
+        .reader span { border: 1px solid var(--divider-color); padding: 8px; overflow-wrap: anywhere; }
+        .diagnostics { border-top: 1px solid var(--divider-color); padding-top: 12px; } .diagnostics summary { cursor: pointer; }
         .recommendations { margin-top: 18px; padding: 12px; background: var(--secondary-background-color); border-left: 3px solid #497fa8; overflow-wrap: anywhere; }
         .note { font-size: 12px; color: var(--secondary-text-color); margin-top: 14px; }
         @media (max-width: 550px) { .identity, .charge-grid { grid-template-columns: 1fr; } h2 { font-size: 21px; } .header, .panel { padding: 18px; } .tab { padding: 10px 14px; } }
@@ -123,9 +129,13 @@ class OpenIMPRESCard extends HTMLElement {
           <h3>Recommendations</h3><div class="recommendations">${show('battery.recommendations')}</div>
         </div>
         <div class="panel" id="panel-advanced" role="tabpanel" aria-labelledby="tab-advanced" ${selected !== 'advanced' ? 'hidden' : ''}>
-          ${group('Battery diagnostics', ['impres_detected', 'battery.voltage_V', 'battery.temperature_C', 'battery.charge_cycles', 'battery.non_impres_cycles', 'battery.calibration_cycles'])}
-          ${['Charger and capture', 'Header probe', 'Passive capture'].map(title => group(title, OPENIMPRES_SECTIONS[title])).join('')}
-          <div class="note">Charger status codes are shown as reported by the device.</div>
+          <section class="box"><h3>Live monitor</h3><dl class="history">${row('battery.voltage_V', 'Voltage')}${row('battery.temperature_C', 'Temperature')}${row('battery.health_percent', 'Estimated Health')}</dl></section>
+          <section class="box"><h3>Reader identity</h3><div class="reader">Location / charger<span>${this.escape(this.config.reader_name || 'Not configured')}</span></div><div class="note">Display label configured in the card. Device email-alert identity is managed separately.</div></section>
+          <details class="diagnostics"><summary>Capture and device diagnostics</summary>
+            ${group('Battery diagnostics', ['impres_detected'])}
+            ${['Charger and capture', 'Header probe', 'Passive capture'].map(title => group(title, OPENIMPRES_SECTIONS[title])).join('')}
+            <div class="note">Charger status codes are shown as reported by the device.</div>
+          </details>
         </div>
         <div class="panel" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" ${selected !== 'settings' ? 'hidden' : ''}>
           ${group('Connection and notification status', OPENIMPRES_SECTIONS['Network and notifications'])}
