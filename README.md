@@ -5,6 +5,25 @@ capture, network, and calibration data from MQTT-backed Home Assistant entities.
 
 ## Installation
 
+### HACS custom repository
+
+1. Open HACS in Home Assistant and select **Custom repositories** from its menu.
+2. Add `https://github.com/rodgrech/HA-OpenIMPRES-Card` with type **Dashboard**
+   (called **Lovelace** or **Plugin** in some older versions).
+3. Find **OpenIMPRES Card** in HACS and download it. If a version selector is
+   shown and no release is available, select the default branch (`main`).
+4. Check that your dashboard resources include
+   `/hacsfiles/HA-OpenIMPRES-Card/openimpres-card.js` as a **JavaScript module**.
+   Add it manually if HACS has not registered it, particularly with YAML-managed
+   resources.
+5. Reload your browser, then add a manual card using the configuration below.
+
+This is a HACS custom repository, not an entry in the default HACS catalog.
+The repository contains the ready-to-load JavaScript file; no build or release
+asset is required. The current version is a preview with display-only Settings.
+
+### Manual installation
+
 Copy `openimpres-card.js` to your Home Assistant `/config/www/` directory. Add a
 dashboard resource with URL `/local/openimpres-card.js` and type **JavaScript
 module**, then add a manual card using the configuration below. Reload your
